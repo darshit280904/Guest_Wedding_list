@@ -56,15 +56,21 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Routes
+// Routes (supports both /api/ route prefix and Vercel stripped routes)
 app.use('/api/lots', require('./routes/lots'));
+app.use('/lots', require('./routes/lots'));
+
 app.use('/api/guests', require('./routes/guests'));
+app.use('/guests', require('./routes/guests'));
+
 app.use('/api/export', require('./routes/export'));
+app.use('/export', require('./routes/export'));
 
 // Health check
-app.get('/', (req, res) => {
+app.get(['/', '/api'], (req, res) => {
   res.json({ message: 'Marriage Guest List API is running 🎊' });
 });
+
 
 // Connect to MongoDB Atlas and start server when run locally
 if (!process.env.VERCEL) {
