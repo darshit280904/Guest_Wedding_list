@@ -25,10 +25,8 @@ const connectDB = async () => {
     return;
   }
 
-  const MONGO_URI = process.env.MONGO_URI;
-  if (!MONGO_URI) {
-    throw new Error('MONGO_URI environment variable is missing');
-  }
+  const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://darshitgoyani18_db:Darshit18%40d@cluster0.ulveq2b.mongodb.net/guestlist?retryWrites=true&w=majority&appName=Cluster0';
+
 
   if (!connPromise) {
     connPromise = mongoose.connect(MONGO_URI, {
