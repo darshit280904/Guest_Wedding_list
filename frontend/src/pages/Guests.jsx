@@ -1,19 +1,20 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   getLot, getGuests, addGuest, bulkAddGuests,
-  deleteGuest, updateGuest, exportPDF, exportWord, parseFile
+  deleteGuest, updateGuest, exportPDF, exportWord, parseFile, deleteLot
 } from '../api';
 import GuestForm from '../components/GuestForm';
 import GuestTable from '../components/GuestTable';
 import toast from 'react-hot-toast';
 import {
   FileText, FileDown, Search, Users, Upload,
-  ChevronLeft, ChevronRight, X, Loader2, AlertTriangle, FileUp
+  ChevronLeft, ChevronRight, X, Loader2, AlertTriangle, FileUp, Trash2
 } from 'lucide-react';
 
 export default function Guests() {
   const { lotId } = useParams();
+  const navigate = useNavigate();
   const [lot, setLot] = useState(null);
   const [guests, setGuests] = useState([]);
   const [total, setTotal] = useState(0);
@@ -42,6 +43,18 @@ export default function Guests() {
       const res = await getLot(lotId);
       setLot(res.data);
     } catch { toast.error('Lot not found'); }
+  };
+
+  const handleDeleteLot = async () => {
+    if (window.confirm(`Are you sure you want to delete lot "${lot?.lotName || 'this lot'}" and all its ${total} guests?`)) {
+      try {
+        await deleteLot(lotId);
+        toast.success('Lot deleted successfully!');
+        navigate('/lots');
+      } catch (err) {
+        toast.error('Failed to delete lot');
+      }
+    }
   };
 
   const fetchGuests = useCallback(async () => {
@@ -240,6 +253,15 @@ export default function Guests() {
           >
             {exporting === 'word' ? <Loader2 size={14} style={{ animation: 'spin 0.7s linear infinite' }} /> : <FileDown size={14} />}
             Download Word
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleDeleteLot}
+            style={{ color: '#e74c3c', borderColor: 'rgba(231, 76, 60, 0.3)' }}
+            id="delete-lot-btn"
+          >
+            <Trash2 size={14} />
+            Delete Lot
           </button>
         </div>
       </div>
