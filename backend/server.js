@@ -4,12 +4,15 @@ const cors = require('cors');
 const dns = require('dns');
 require('dotenv').config();
 
-// Safely configure DNS fallback for local ISP restrictions
-try {
-  dns.setServers(['8.8.8.8', '8.8.4.4']);
-} catch (e) {
-  // Ignore in restricted serverless container environments
+// Safely configure DNS fallback for local ISP restrictions (only when running locally)
+if (!process.env.VERCEL) {
+  try {
+    dns.setServers(['8.8.8.8', '8.8.4.4']);
+  } catch (e) {
+    // Ignore
+  }
 }
+
 
 const app = express();
 
