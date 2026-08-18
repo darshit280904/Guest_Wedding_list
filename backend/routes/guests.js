@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Guest = require('../models/Guest');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 
 const upload = multer({
@@ -21,9 +20,11 @@ router.post('/parse-file', upload.single('file'), async (req, res) => {
     let extractedText = '';
 
     if (mimetype === 'application/pdf' || originalname.endsWith('.pdf')) {
+      const pdfParse = require('pdf-parse');
       const data = await pdfParse(buffer);
       extractedText = data.text;
-    } else if (
+    }
+ else if (
       mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
       originalname.endsWith('.docx')
     ) {
