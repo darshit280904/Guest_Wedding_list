@@ -63,21 +63,19 @@ app.get('/', (req, res) => {
   res.json({ message: 'Marriage Guest List API is running 🎊' });
 });
 
-// Connect to MongoDB Atlas and start server when run directly
+// Connect to MongoDB Atlas and start server
 const PORT = process.env.PORT || 5000;
 
-if (require.main === module) {
-  connectDB()
-    .then(() => {
-      app.listen(PORT, () => {
-        console.log(`🚀 Server running on http://localhost:${PORT}`);
-      });
-    })
-    .catch((err) => {
-      console.error('❌ Failed to start server:', err.message);
-      process.exit(1);
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
     });
-}
+  })
+  .catch((err) => {
+    console.error('❌ Failed to start server:', err.message);
+  });
 
 module.exports = app;
+
 
