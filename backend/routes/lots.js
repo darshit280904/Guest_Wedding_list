@@ -35,14 +35,21 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { lotName, description, createdBy } = req.body;
-    if (!lotName) return res.status(400).json({ message: 'Lot name is required' });
-    const lot = new Lot({ lotName, description, createdBy });
+    if (!lotName || !lotName.trim()) {
+      return res.status(400).json({ message: 'Lot name is required' });
+    }
+    const lot = new Lot({
+      lotName: lotName.trim(),
+      description: (description || '').trim(),
+      createdBy: (createdBy && createdBy.trim()) ? createdBy.trim() : 'Admin',
+    });
     const savedLot = await lot.save();
     res.status(201).json(savedLot);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // PUT update a lot
 router.put('/:id', async (req, res) => {
