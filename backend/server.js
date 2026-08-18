@@ -1,17 +1,59 @@
-const dns = require('dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const dns = require('dns');
 require('dotenv').config();
 
+// Safely configure DNS fallback for local ISP restrictions
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+} catch (e) {
+  // Ignore in restricted serverless container environments
+}
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Database connection state & cached handler
+let connPromise = null;
+
+const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) {
+    return;
+  }
+
+  const MONGO_URI = process.env.MONGO_URI;
+  if (!MONGO_URI) {
+    throw new Error('MONGO_URI environment variable is missing');
+  }
+
+  if (!connPromise) {
+    connPromise = mongoose.connect(MONGO_URI, {
+      serverSelectionTimeoutMS: 10000,
+    }).then(() => {
+      console.log('✅ Connected to MongoDB Atlas');
+    }).catch((err) => {
+      connPromise = null;
+      throw err;
+    });
+  }
+
+  await connPromise;
+};
+
+// Ensure DB is connected before handling any API request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('❌ Database connection error:', err.message);
+    res.status(500).json({ message: 'Database connection failed: ' + err.message });
+  }
+});
 
 // Routes
 app.use('/api/lots', require('./routes/lots'));
@@ -23,21 +65,21 @@ app.get('/', (req, res) => {
   res.json({ message: 'Marriage Guest List API is running 🎊' });
 });
 
-// Connect to MongoDB Atlas and start server
+// Connect to MongoDB Atlas and start server when run directly
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
 
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log('✅ Connected to MongoDB Atlas');
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
+if (require.main === module) {
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error('❌ Failed to start server:', err.message);
+      process.exit(1);
     });
-  })
-  .catch((err) => {
-    console.error('❌ MongoDB connection error:', err.message);
-    process.exit(1);
-  });
+}
 
 module.exports = app;
+
