@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { getLots } from '../api';
-import { FolderOpen, Users, Heart, TrendingUp, Calendar } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { getLots, deleteLot } from '../api';
+import { FolderOpen, Users, Heart, TrendingUp, Calendar, Trash2, Eye } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function Dashboard() {
   const [lots, setLots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
@@ -19,6 +21,19 @@ export default function Dashboard() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteLot = async (e, lot) => {
+    e.stopPropagation();
+    if (window.confirm(`Delete lot "${lot.lotName}" and all its ${lot.guestCount || 0} guests?`)) {
+      try {
+        await deleteLot(lot._id);
+        toast.success('Lot deleted successfully');
+        setLots((prev) => prev.filter((l) => l._id !== lot._id));
+      } catch (err) {
+        toast.error('Failed to delete lot');
+      }
     }
   };
 
@@ -154,11 +169,12 @@ export default function Dashboard() {
                   <th>Description</th>
                   <th>Guests</th>
                   <th>Created</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {lots.slice(0, 8).map((lot, i) => (
-                  <tr key={lot._id} onClick={() => window.location.href = `/lots/${lot._id}`} style={{ cursor: 'pointer' }}>
+                  <tr key={lot._id} onClick={() => navigate(`/lots/${lot._id}`)} style={{ cursor: 'pointer' }}>
                     <td className="table-num">{i + 1}</td>
                     <td>
                       <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{lot.lotName}</span>
@@ -172,6 +188,25 @@ export default function Dashboard() {
                     <td className="text-muted text-xs">
                       {new Date(lot.createdAt).toLocaleDateString('en-IN')}
                     </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <button
+                          className="btn btn-ghost btn-icon btn-sm"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/lots/${lot._id}`); }}
+                          title="View Guests"
+                        >
+                          <Eye size={15} />
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-icon btn-sm"
+                          onClick={(e) => handleDeleteLot(e, lot)}
+                          title="Delete Lot"
+                          style={{ color: '#e74c3c' }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -182,3 +217,4 @@ export default function Dashboard() {
     </div>
   );
 }
+
